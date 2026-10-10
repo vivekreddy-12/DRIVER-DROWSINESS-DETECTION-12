@@ -17,7 +17,7 @@ cp -r "$SRC_DIR"/. "$APP_DIR"/
 chown -R "$SERVICE_USER":"$SERVICE_USER" "$APP_DIR"
 
 sudo -u "$SERVICE_USER" python3 -m venv "$APP_DIR/.venv"
-sudo -u "$SERVICE_USER" "$APP_DIR/.venv/bin/pip" install -r "$APP_DIR/requirements.txt" -r "$APP_DIR/requirements-pi.txt"
+sudo -u "$SERVICE_USER" "$APP_DIR/.venv/bin/pip" install -r "$APP_DIR/requirements-device.txt" -r "$APP_DIR/requirements-pi.txt"
 
 usermod -aG video,gpio "$SERVICE_USER"
 
