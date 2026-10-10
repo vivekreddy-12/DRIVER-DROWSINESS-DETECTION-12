@@ -1,0 +1,11 @@
+# Core
+opencv-python>=4.8
+mediapipe==0.10.14     # pinned: this version still ships the mp.solutions.face_mesh API
+numpy>=1.24
+
+# Optional
+pyttsx3>=2.90          # spoken alerts
+obd>=0.7.1             # OBD-II vehicle speed (python-obd)
+
+# Development
+pytest>=7

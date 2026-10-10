@@ -1,0 +1,20 @@
+[Unit]
+Description=Driver drowsiness assistant
+After=network.target
+
+[Service]
+Type=simple
+# Create a dedicated user first if you prefer. Add it to the video and gpio groups.
+User=pi
+WorkingDirectory=/opt/drowsiness-assistant
+ExecStart=/opt/drowsiness-assistant/.venv/bin/python main.py --no-display --buzzer-pin 17 --log /var/log/drowsiness/drive.csv
+Environment=PYTHONUNBUFFERED=1
+# systemd creates /var/log/drowsiness, owned by User
+LogsDirectory=drowsiness
+KillSignal=SIGTERM
+TimeoutStopSec=10
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
