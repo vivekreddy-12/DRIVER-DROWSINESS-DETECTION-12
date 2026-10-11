@@ -31,6 +31,16 @@ class CompositeNotifier:
             except Exception as exc:
                 print(f"[alerts] output failed: {exc}", file=sys.stderr)
 
+    def stop(self) -> None:
+        for notifier in self._notifiers:
+            stop = getattr(notifier, "stop", None)
+            if stop is None:
+                continue
+            try:
+                stop()
+            except Exception as exc:
+                print(f"[alerts] output failed to stop: {exc}", file=sys.stderr)
+
 
 class Notifier:
     def __init__(self, voice: bool = True) -> None:

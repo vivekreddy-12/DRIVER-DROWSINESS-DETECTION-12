@@ -29,6 +29,11 @@ class AlertController:
     def handle(self, t: float, status: Status) -> None:
         level = status.level
         if level == Level.NORMAL:
+            if self._level != Level.NORMAL:
+                # Let outputs that loop (such as the siren) know the alert has cleared.
+                stop = getattr(self._notifier, "stop", None)
+                if stop is not None:
+                    stop()
             self._level = Level.NORMAL
             return
 

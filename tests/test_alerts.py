@@ -27,6 +27,32 @@ def test_fires_on_escalation_and_respects_repeat_interval():
     assert notifier.played == [Level.WARNING, Level.ALERT, Level.ALERT]
 
 
+class StoppableNotifier(FakeNotifier):
+    def __init__(self):
+        super().__init__()
+        self.stops = 0
+
+    def stop(self):
+        self.stops += 1
+
+
+def test_stop_is_called_once_when_alert_clears():
+    notifier = StoppableNotifier()
+    ctrl = AlertController(notifier)
+    ctrl.handle(0.0, status(Level.ALERT))
+    ctrl.handle(1.0, status(Level.NORMAL))
+    ctrl.handle(2.0, status(Level.NORMAL))  # already normal: no second stop
+    assert notifier.stops == 1
+
+
+def test_notifier_without_stop_still_works():
+    notifier = FakeNotifier()
+    ctrl = AlertController(notifier)
+    ctrl.handle(0.0, status(Level.ALERT))
+    ctrl.handle(1.0, status(Level.NORMAL))
+    assert notifier.played == [Level.ALERT]
+
+
 def test_normal_status_never_fires():
     notifier = FakeNotifier()
     ctrl = AlertController(notifier)
