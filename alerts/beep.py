@@ -3,8 +3,10 @@
 Uses the built-in winsound module, so no extra packages are needed.
 
 - WARNING plays one short beep.
-- ALERT and CRITICAL start a repeating siren. It keeps sounding until stop()
-  is called, which happens when the driver's drowsiness episode clears.
+- ALERT and CRITICAL start a siren that sounds for ALARM_DURATION_S (10 seconds)
+  and then stops. It does not restart while the same alert continues. It
+  restarts only if the level changes, or after stop() is called when the
+  drowsiness episode clears.
 
 Sounds run on background threads, so the camera loop never waits.
 
@@ -15,6 +17,7 @@ from __future__ import annotations
 
 import sys
 import threading
+import time
 from typing import Callable
 
 from detection.state import Level
@@ -28,6 +31,9 @@ ALARM_PATTERNS: dict[Level, list[tuple[int, float, float]]] = {
     Level.CRITICAL: [(1800, 0.25, 0.0), (2400, 0.25, 0.0)],
 }
 
+# How long one alert's siren sounds before it stops.
+ALARM_DURATION_S = 10.0
+
 ToneFn = Callable[[int, int], None]  # (frequency in Hz, duration in ms)
 
 
@@ -40,8 +46,9 @@ def _windows_tone() -> ToneFn | None:
 
 
 class BeepNotifier:
-    def __init__(self, tone: ToneFn | None = None) -> None:
+    def __init__(self, tone: ToneFn | None = None, alarm_duration_s: float = ALARM_DURATION_S) -> None:
         self._tone = tone if tone is not None else _windows_tone()
+        self._alarm_duration_s = alarm_duration_s
         self._lock = threading.Lock()
         self._alarm_level: Level | None = None
         self._alarm_stop: threading.Event | None = None
@@ -82,7 +89,8 @@ class BeepNotifier:
         threading.Thread(target=self._alarm_loop, args=(ALARM_PATTERNS[level], stop), daemon=True).start()
 
     def _alarm_loop(self, pattern: list[tuple[int, float, float]], stop: threading.Event) -> None:
-        while not stop.is_set():
+        deadline = time.monotonic() + self._alarm_duration_s
+        while not stop.is_set() and time.monotonic() < deadline:
             if not self._play_steps(pattern, stop):
                 return
 

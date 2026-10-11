@@ -28,16 +28,43 @@ def test_warning_plays_one_short_beep():
     assert played == [(880, 150)]
 
 
-def test_alert_siren_repeats_until_stopped():
+def test_alert_siren_stops_after_its_duration():
     played, tone = recorder()
-    notifier = BeepNotifier(tone=tone)
+    notifier = BeepNotifier(tone=tone, alarm_duration_s=0.4)
     notifier.play(Level.ALERT)
-    assert wait_for(lambda: len(played) >= 4)  # more than one full pass of the pattern
-    notifier.stop()
-    time.sleep(0.2)                            # let any in-progress tone finish
+    assert wait_for(lambda: len(played) >= 2)
+    time.sleep(0.6)                            # longer than the duration, plus one tone
     count = len(played)
     time.sleep(0.3)
-    assert len(played) == count                # no more tones after stop()
+    assert len(played) == count                # silent after the duration ends
+
+
+def test_siren_does_not_restart_for_same_alert_after_it_ends():
+    played, tone = recorder()
+    notifier = BeepNotifier(tone=tone, alarm_duration_s=0.3)
+    notifier.play(Level.ALERT)
+    time.sleep(0.8)
+    count = len(played)
+    notifier.play(Level.ALERT)                 # repeat call while still drowsy
+    time.sleep(0.3)
+    assert len(played) == count
+
+
+def test_siren_restarts_after_stop_or_level_change():
+    played, tone = recorder()
+    notifier = BeepNotifier(tone=tone, alarm_duration_s=0.3)
+    notifier.play(Level.ALERT)
+    time.sleep(0.6)
+    before = len(played)
+    notifier.stop()
+    notifier.play(Level.ALERT)                 # a new episode
+    assert wait_for(lambda: len(played) > before)
+    notifier.stop()
+
+
+def test_default_siren_duration_is_ten_seconds():
+    from alerts.beep import ALARM_DURATION_S
+    assert ALARM_DURATION_S == 10.0
 
 
 def test_critical_uses_faster_siren_than_alert():
