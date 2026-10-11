@@ -17,6 +17,7 @@ import numpy as np
 import signal
 
 from alerts.audio import CompositeNotifier, Notifier
+from alerts.beep import BeepNotifier
 from alerts.buzzer import GpioBuzzer, GpioPin
 from alerts.escalation import AlertController
 from config import DEFAULT
@@ -56,11 +57,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--no-display", action="store_true", help="run without a window")
     p.add_argument("--no-voice", action="store_true", help="disable spoken alerts")
     p.add_argument("--buzzer-pin", type=int, default=None, help="GPIO pin for a buzzer (Raspberry Pi)")
+    p.add_argument("--no-beep", action="store_true", help="disable the beep sound (Windows)")
     return p.parse_args(argv)
 
 
 def build_notifier(args: argparse.Namespace):
     outputs = [Notifier(voice=not args.no_voice)]
+    if not args.no_beep:
+        outputs.append(BeepNotifier())
     if args.buzzer_pin is not None:
         try:
             outputs.append(GpioBuzzer(GpioPin(args.buzzer_pin)))
